@@ -25,11 +25,9 @@ def main():
     
     isRunning = True
 
-    frameCount = 0
+    frameTimes = []
 
     while isRunning:
-        frameCount += 1
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 isRunning = False
@@ -53,7 +51,11 @@ def main():
         stopTime = time.perf_counter()
         timeDelta = stopTime - startTime
 
-        print(f"""Render time for frame {frameCount}: {timeDelta}s""")
+        frameTimes.append(timeDelta)
+        averageTime = sum(frameTimes) / len(frameTimes)
+
+        print(f"""Render time for frame {len(frameTimes)}: {(timeDelta * 1000):.3f}ms""")
+        print(f"""Average frame time: {(averageTime * 1000):.3f}ms | Average FPS: {(1 / averageTime):.3f}""")
 
         clock.tick(fps)
     
