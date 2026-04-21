@@ -1,11 +1,13 @@
 import pygame
 import numpy as np
 import time
+import random
+
 from dataclasses import dataclass
 
-width = int(1920 / 4)
+width = int(1920 / 5)
 #width = 500
-height = int(1080 / 4)
+height = int(1080 / 5)
 #height = 300
 
 dimensions = [width, height]
@@ -29,14 +31,15 @@ def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) 
     return lineAB[0] * lineAP[1] - lineAB[1] * lineAP[0]
 
 def isInTriangle(triangle: list[np.ndarray], testPoint: np.ndarray) -> bool:
+    edges = []
+
     for i in range(3):
         pointA = triangle[i]
         pointB = triangle[(i + 1) % 3]
 
-        if edgeFunction(pointA, pointB, testPoint) >= 0:
-            return False
+        edges.append(edgeFunction(pointA, pointB, testPoint))
     
-    return True
+    return all(edge >= 0 for edge in edges) or all(edge <= 0 for edge in edges)
 
 @dataclass
 class Point:
@@ -62,8 +65,18 @@ def main():
 
     frameTimes = []
 
-    points = [Point(0.1, 0.1), Point(0.3, 0.5), Point(0.8, 0.3)]
-    triangle = [point.toPixel() for point in points]
+    pointSets = [
+        [Point(0.1, 0.1), Point(0.3, 0.5), Point(0.4, 0.3)], 
+        [Point(0.8, 0.7), Point(0.6, 0.5), Point(0.9, 0.4)],
+        [Point(0.5, 0.6), Point(0.4, 0.5), Point(0.4, 0.8)]
+
+    ]
+
+    triangles = []
+    for pointSet in pointSets:
+        triangles.append([point.toPixel() for point in pointSet])
+    
+    print(triangles)
 
     while isRunning:
         for event in pygame.event.get():
@@ -80,11 +93,21 @@ def main():
             for y in range(height):
                 screenPoint = np.array([x, y], dtype = float)
 
-                if isInTriangle(triangle, screenPoint):
-                    frameBuffer[x, y] = (200, 200, 200)
-                
-                else:
-                    frameBuffer[x, y] = (255 * (width - x) / width, 0, 255 * (height - y) / height)
+                for triangle in triangles:
+                    #print(triangle)
+                    inTriangle = False
+
+                    for triangle in triangles:
+                        if isInTriangle(triangle, screenPoint):
+                            inTriangle = True
+                            
+                            break
+
+                    if inTriangle:
+                        frameBuffer[x, y] = (200, 200, 200)
+
+                    else:
+                        frameBuffer[x, y] = (255 * (width - x) / width, 0, 255 * (height - y) / height)
 
         pygame.surfarray.blit_array(screen, frameBuffer)
 
@@ -102,6 +125,9 @@ def main():
         print(f"""Average frame time: {(averageTime * 1000):.3f}ms | Average FPS: {(1 / averageTime):.3f}""")
 
         clock.tick(fps)
+        #time.sleep(5)
+
+        #isRunning = False
     
     pygame.quit()
 
