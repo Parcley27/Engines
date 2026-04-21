@@ -30,6 +30,23 @@ def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) 
 
     return lineAB[0] * lineAP[1] - lineAB[1] * lineAP[0]
 
+def computeTriangleMask(triangle: list[np.ndarray], gridX: int, gridY: int):
+    edges = []
+
+    for i in range(3):
+        pointA = triangle[i]
+        pointB = triangle[(i + 1) % 3]
+
+        edge = (pointB[0] - pointA[0]) * (gridY - pointA[1]) - (pointB[1] - pointA[1]) * (gridX - pointA[0])
+
+        edges.append(edge)
+
+    return (
+        ((edges[0] >= 0) & (edges[1] >= 0) & (edges[2] >= 0)) |
+        ((edges[0] <= 0) & (edges[1] <= 0) & (edges[2] <= 0))
+
+    )
+
 def isInTriangle(triangle: list[np.ndarray], testPoint: np.ndarray) -> bool:
     edges = []
 
@@ -92,19 +109,10 @@ def main():
         frameBuffer[:, :, 0] = (255 * (width  - gridX) / width).astype(np.uint8)
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
 
-        for x in range(width):
-            for y in range(height):
-                screenPoint = np.array([x, y], dtype = float)
-                inTriangle = False
+        for triangle in triangles:
+            mask = computeTriangleMask(triangle, gridX, gridY)
 
-                for triangle in triangles:
-                    if isInTriangle(triangle, screenPoint):
-                        inTriangle = True
-                        
-                        break
-
-                if inTriangle:
-                    frameBuffer[x, y] = (200, 200, 200)
+            frameBuffer[mask] = (200, 200, 200)
 
         pygame.surfarray.blit_array(screen, frameBuffer)
 
