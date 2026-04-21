@@ -54,15 +54,10 @@ def main():
 
     pygame.init()
     pygame.display.set_caption("2D Engine")
-
-    screen = pygame.display.set_mode(dimensions)
-
-    frameBuffer = np.zeros((width, height, 3), dtype = np.uint8)
-    
+    screen = pygame.display.set_mode(dimensions)    
     clock = pygame.time.Clock()
     
     isRunning = True
-
     frameTimes = []
 
     pointSets = [
@@ -74,9 +69,14 @@ def main():
 
     triangles = []
     for pointSet in pointSets:
-        triangles.append([point.toPixel() for point in pointSet])
+        triangles.append(([point.toPixel() for point in pointSet]))
     
-    print(triangles)
+    xSide = np.arange(width, dtype = float)
+    ySide = np.arange(height, dtype = float)
+
+    gridX, gridY = np.meshgrid(xSide, ySide, indexing = "ij")
+
+    frameBuffer = np.zeros((width, height, 3), dtype = np.uint8)
 
     while isRunning:
         for event in pygame.event.get():
@@ -89,6 +89,9 @@ def main():
         startTime = time.perf_counter()
 
         #frameBuffer[:, :] = (255, 0, 255)
+        frameBuffer[:, :, 0] = (255 * (width  - gridX) / width).astype(np.uint8)
+        frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
+
         for x in range(width):
             for y in range(height):
                 screenPoint = np.array([x, y], dtype = float)
@@ -102,9 +105,6 @@ def main():
 
                 if inTriangle:
                     frameBuffer[x, y] = (200, 200, 200)
-
-                else:
-                    frameBuffer[x, y] = (255 * (width - x) / width, 0, 255 * (height - y) / height)
 
         pygame.surfarray.blit_array(screen, frameBuffer)
 
