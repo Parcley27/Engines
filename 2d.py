@@ -92,22 +92,19 @@ def main():
         for x in range(width):
             for y in range(height):
                 screenPoint = np.array([x, y], dtype = float)
+                inTriangle = False
 
                 for triangle in triangles:
-                    #print(triangle)
-                    inTriangle = False
+                    if isInTriangle(triangle, screenPoint):
+                        inTriangle = True
+                        
+                        break
 
-                    for triangle in triangles:
-                        if isInTriangle(triangle, screenPoint):
-                            inTriangle = True
-                            
-                            break
+                if inTriangle:
+                    frameBuffer[x, y] = (200, 200, 200)
 
-                    if inTriangle:
-                        frameBuffer[x, y] = (200, 200, 200)
-
-                    else:
-                        frameBuffer[x, y] = (255 * (width - x) / width, 0, 255 * (height - y) / height)
+                else:
+                    frameBuffer[x, y] = (255 * (width - x) / width, 0, 255 * (height - y) / height)
 
         pygame.surfarray.blit_array(screen, frameBuffer)
 
