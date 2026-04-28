@@ -64,7 +64,14 @@ class Point:
     y: float
 
     def toPixel(self) -> np.ndarray:
-        return np.array([self.x * width, self.y * height]) 
+        return np.array([self.x * height, height - self.y * height])
+
+@dataclass
+class Triangle:
+    points: [Point]
+
+    #def translate(self, x, y):
+       # for point in points
 
 def main():
     print("Hello, Game Engine!")
@@ -79,8 +86,8 @@ def main():
     #frameTimes = []
 
     pointSets = [
-        [Point(0.1, 0.1), Point(0.3, 0.5), Point(0.4, 0.3)], 
-        [Point(0.8, 0.7), Point(0.6, 0.5), Point(0.9, 0.4)],
+        [Point(0.1, 0.1), Point(0.5, 0.1), Point(0.1, 0.5)], 
+        [Point(0.8, 0.7), Point(0.6, 0.5), Point(1.2, 0.4)],
         [Point(0.5, 0.6), Point(0.4, 0.5), Point(0.4, 0.8)]
 
     ]
