@@ -2,8 +2,9 @@ import pygame
 import numpy as np
 import time
 import random
+import math
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 width = int(1920 / 4)
 #width = 500
@@ -13,6 +14,35 @@ height = int(1280 / 4)
 dimensions = [width, height]
 
 fps = 60
+
+@dataclass
+class Point:
+    x: float
+    y: float
+
+    def toPixel(self) -> np.ndarray:
+        return np.array([self.x * height, height - self.y * height])
+
+@dataclass
+class Triangle:
+    points: list[Point]
+    originalPoints: list[Point] = field(default_factory = list)
+
+    def __post_init__(self):
+        self.originalPoints = [Point(point.x, point.y) for point in self.points]
+
+    def translate(self, x, y):
+        for point in self.points:
+            point.x += x
+            point.y += y
+    
+    def translateFromOriginal(self, x, y):
+        for i, point in enumerate(self.points):
+            point.x = self.originalPoints[i].x + x
+            point.y = self.originalPoints[i].y + y
+            
+    def getPoints(self) -> list[np.ndarray]:
+        return [point.toPixel() for point in self.points]
 
 def constructVector(pointA: np.ndarray, pointB: np.ndarray) -> np.ndarray:
     if len(pointA) != len(pointB): return np.array([0, 0], dtype = float)
@@ -30,12 +60,14 @@ def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) 
 
     return lineAB[0] * lineAP[1] - lineAB[1] * lineAP[0]
 
-def computeTriangleMask(triangle: list[np.ndarray], gridX: int, gridY: int):
+def computeTriangleMask(triangle: Triangle, gridX: int, gridY: int):
     edges = []
 
+    trianglePoints = triangle.getPoints()
+
     for i in range(3):
-        pointA = triangle[i]
-        pointB = triangle[(i + 1) % 3]
+        pointA = trianglePoints[i]
+        pointB = trianglePoints[(i + 1) % 3]
 
         edge = (pointB[0] - pointA[0]) * (gridY - pointA[1]) - (pointB[1] - pointA[1]) * (gridX - pointA[0])
 
@@ -47,31 +79,17 @@ def computeTriangleMask(triangle: list[np.ndarray], gridX: int, gridY: int):
 
     )
 
-def isInTriangle(triangle: list[np.ndarray], testPoint: np.ndarray) -> bool:
+def isInTriangle(triangle: Triangle, testPoint: np.ndarray) -> bool:
+    trianglePoints = triangle.getPoints()
     edges = []
 
     for i in range(3):
-        pointA = triangle[i]
-        pointB = triangle[(i + 1) % 3]
+        pointA = trianglePoints[i]
+        pointB = trianglePoints[(i + 1) % 3]
 
         edges.append(edgeFunction(pointA, pointB, testPoint))
     
     return all(edge >= 0 for edge in edges) or all(edge <= 0 for edge in edges)
-
-@dataclass
-class Point:
-    x: float
-    y: float
-
-    def toPixel(self) -> np.ndarray:
-        return np.array([self.x * height, height - self.y * height])
-
-@dataclass
-class Triangle:
-    points: [Point]
-
-    #def translate(self, x, y):
-       # for point in points
 
 def main():
     print("Hello, Game Engine!")
@@ -82,7 +100,7 @@ def main():
     clock = pygame.time.Clock()
     
     isRunning = True
-    #frameCount = 0
+    frameCount = 0
     #frameTimes = []
 
     pointSets = [
@@ -92,9 +110,7 @@ def main():
 
     ]
 
-    triangles = []
-    for pointSet in pointSets:
-        triangles.append(([point.toPixel() for point in pointSet]))
+    triangles = [Triangle(pointSet) for pointSet in pointSets]
     
     #xSide = np.arange(width, dtype = float)
     #ySide = np.arange(height, dtype = float)
@@ -118,13 +134,15 @@ def main():
 
         #startTime = time.perf_counter()
 
-        #frameCount += 1
+        frameCount += 1
 
         #frameBuffer[:, :] = (255, 0, 255)
+        frameBuffer[:] = 0
         frameBuffer[:, :, 0] = (255 * (width  - gridX) / width).astype(np.uint8)
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
 
         for triangle in triangles:
+            triangle.translateFromOriginal(0.1 + math.sin(frameCount * 0.1) * 0.1 , 0.1 + math.cos(frameCount * 0.1) * 0.1)
             mask = computeTriangleMask(triangle, gridX, gridY)
 
             frameBuffer[mask] = (200, 200, 200)
