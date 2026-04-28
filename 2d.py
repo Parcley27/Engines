@@ -5,9 +5,9 @@ import random
 
 from dataclasses import dataclass
 
-width = int(1920 / 5)
+width = int(1920 / 4)
 #width = 500
-height = int(1080 / 5)
+height = int(1280 / 4)
 #height = 300
 
 dimensions = [width, height]
@@ -75,7 +75,8 @@ def main():
     clock = pygame.time.Clock()
     
     isRunning = True
-    frameTimes = []
+    #frameCount = 0
+    #frameTimes = []
 
     pointSets = [
         [Point(0.1, 0.1), Point(0.3, 0.5), Point(0.4, 0.3)], 
@@ -88,10 +89,15 @@ def main():
     for pointSet in pointSets:
         triangles.append(([point.toPixel() for point in pointSet]))
     
-    xSide = np.arange(width, dtype = float)
-    ySide = np.arange(height, dtype = float)
+    #xSide = np.arange(width, dtype = float)
+    #ySide = np.arange(height, dtype = float)
 
-    gridX, gridY = np.meshgrid(xSide, ySide, indexing = "ij")
+    #xSide = np.arange(width, dtype = np.uint16)
+    #ySide = np.arange(height, dtype = np.uint16)
+
+    #gridX, gridY = np.meshgrid(xSide, ySide, indexing = "ij")
+
+    gridX, gridY = np.meshgrid(np.arange(width), np.arange(height), indexing="ij")
 
     frameBuffer = np.zeros((width, height, 3), dtype = np.uint8)
 
@@ -103,7 +109,9 @@ def main():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 isRunning = False
 
-        startTime = time.perf_counter()
+        #startTime = time.perf_counter()
+
+        #frameCount += 1
 
         #frameBuffer[:, :] = (255, 0, 255)
         frameBuffer[:, :, 0] = (255 * (width  - gridX) / width).astype(np.uint8)
@@ -120,14 +128,14 @@ def main():
 
         pygame.display.flip()
 
-        stopTime = time.perf_counter()
-        timeDelta = stopTime - startTime
+        #stopTime = time.perf_counter()
+        #timeDelta = stopTime - startTime
 
-        frameTimes.append(timeDelta)
-        averageTime = sum(frameTimes) / len(frameTimes)
+        #frameTimes.append(timeDelta)
+        #averageTime = sum(frameTimes) / len(frameTimes)
 
-        print(f"""Render time for frame {len(frameTimes)}: {(timeDelta * 1000):.3f}ms""")
-        print(f"""Average frame time: {(averageTime * 1000):.3f}ms | Average FPS: {(1 / averageTime):.3f}""")
+        #print(f"""Render time for frame {len(frameTimes)}: {(timeDelta * 1000):.3f}ms""")
+        #print(f"""Average frame time: {(averageTime * 1000):.3f}ms | Average FPS: {(1 / averageTime):.3f}""")
 
         clock.tick(fps)
         #time.sleep(5)
