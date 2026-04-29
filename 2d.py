@@ -9,7 +9,9 @@ from dataclasses import dataclass, field
 width = int(1920 / 4)
 height = int(1280 / 4)
 
-dimensions = [width, height]
+fieldOfView = math.radians(90)
+
+screenDimensions = [width, height]
 
 fps = 60
 
@@ -17,9 +19,13 @@ fps = 60
 class Point:
     x: float
     y: float
+    z: float
 
     def toPixel(self) -> np.ndarray:
-        return np.array([self.x * height, height - self.y * height])
+        #scale = (-self.z - 5) / -5
+        scale = (self.z + 5) / 5
+
+        return np.array([width / 2 + self.x * height * scale, height / 2 - self.y * height * scale])
 
 @dataclass
 class Triangle:
@@ -29,29 +35,33 @@ class Triangle:
     colour: tuple[int, int, int] = (0, 255, 255)
 
     def __post_init__(self):
-        self.originalPoints = [Point(point.x, point.y) for point in self.points]
+        self.originalPoints = [Point(point.x, point.y, point.z) for point in self.points]
     
     def centerPoint(self) -> Point:
         centerX = sum(point.x for point in self.points) / len(self.points)
         centerY = sum(point.y for point in self.points) / len(self.points)
+        centerZ = sum(point.z for point in self.points) / len(self.points)
 
-        return Point(centerX, centerY)
+        return Point(centerX, centerY, centerZ)
 
     def originalCenterPoint(self) -> Point:
         centerX = sum(point.x for point in self.originalPoints) / len(self.originalPoints)
         centerY = sum(point.y for point in self.originalPoints) / len(self.originalPoints)
+        centerZ = sum(point.z for point in self.originalPoints) / len(self.originalPoints)
 
-        return Point(centerX, centerY)
+        return Point(centerX, centerY, centerZ)
 
-    def translate(self, x, y):
+    def translate(self, x, y, z):
         for point in self.points:
             point.x += x
             point.y += y
+            point.z += z
     
-    def translateFromOriginal(self, x, y):
+    def translateFromOriginal(self, x, y, z):
         for i, point in enumerate(self.points):
             point.x = self.originalPoints[i].x + x
             point.y = self.originalPoints[i].y + y
+            point.z = self.originalPoints[i].z + z
         
     def scale(self, factor):
         center = self.centerPoint()
@@ -59,6 +69,7 @@ class Triangle:
         for point in self.points:
             point.x = center.x + (point.x - center.x) * factor
             point.y = center.y + (point.y - center.y) * factor
+            point.z = center.z + (point.z - center.z) * factor
     
     def scaleFromOriginal(self, factor):
         center = self.originalCenterPoint()
@@ -66,6 +77,7 @@ class Triangle:
         for i, point in enumerate(self.points):
             point.x = center.x + (self.originalPoints[i].x - center.x) * factor
             point.y = center.y + (self.originalPoints[i].y - center.y) * factor
+            point.z = center.z + (self.originalPoints[i].z - center.z) * factor
 
     def rotate(self, angle):
         cosAngle = math.cos(angle)
@@ -160,18 +172,24 @@ def main():
     pygame.init()
     pygame.display.set_caption("2D Engine")
 
-    screen = pygame.display.set_mode(dimensions)
+    screen = pygame.display.set_mode(screenDimensions)
     clock = pygame.time.Clock()
     
     isRunning = True
     frameCount = 0
 
     pointSets = [
-        [Point(0.1, 0.1), Point(0.5, 0.1), Point(0.1, 0.5)], 
-        [Point(0.8, 0.7), Point(0.6, 0.5), Point(1.2, 0.4)],
-        [Point(0.5, 0.6), Point(0.4, 0.5), Point(0.4, 0.8)]
+        [Point(0.1, 0.1, 0),  Point(0.8, 0.1, 0),  Point(0.1, 0.8, 0)], 
+        [Point(0.9, 0.9, -1), Point(0.2, 0.9, -1), Point(0.9, 0.2, -1)], 
 
     ]
+
+    for pointSet in pointSets:
+        for point in pointSet:
+            point.x -= 0.5
+            point.y -= 0.5
+
+    """
 
     fanPoints = [
         Point(0.50, 0.25),
@@ -198,12 +216,13 @@ def main():
         
     ]
 
+    """
 
-    #triangles = [Triangle(pointSet) for pointSet in pointSets]
-    triangles = fan(fanPoints)
+    triangles = [Triangle(pointSet) for pointSet in pointSets]
+    #triangles = fan(fanPoints)
 
-    for triangle in triangles:
-        triangle.colour = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
+    #for triangle in triangles:
+    #    triangle.colour = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
 
     gridX, gridY = np.meshgrid(np.arange(width), np.arange(height), indexing="ij")
 
@@ -224,12 +243,12 @@ def main():
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
 
         for triangle in triangles:
-            #triangle.translateFromOriginal(math.sin(frameCount * 0.05) * 0.2 , math.cos(frameCount * 0.05) * 0.2)
-            #triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01)
+            #triangle.translateFromOriginal(math.sin(frameCount * 0.05) * 0.2 , math.cos(frameCount * 0.05) * 0.2, 0)
+            triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01, 0)
             #triangle.rotate(0.01)
-            current = 1 + math.sin(frameCount * 0.05) * 0.3
-            previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.3
-            triangle.scale(current / previous)
+            #current = 1 + math.sin(frameCount * 0.05) * 0.3
+            #previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.3
+            #triangle.scale(current / previous)
 
             mask = computeTriangleMask(triangle, gridX, gridY)
 
