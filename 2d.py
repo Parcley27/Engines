@@ -27,7 +27,9 @@ class Point:
 class Triangle:
     points: list[Point]
     originalPoints: list[Point] = field(default_factory = list)
-    
+
+    colour: tuple[int, int, int] = (0, 255, 255)
+
     def __post_init__(self):
         self.originalPoints = [Point(point.x, point.y) for point in self.points]
     
@@ -165,6 +167,9 @@ def main():
     ]
 
     triangles = [Triangle(pointSet) for pointSet in pointSets]
+
+    for triangle in triangles:
+        triangle.colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     
     #xSide = np.arange(width, dtype = float)
     #ySide = np.arange(height, dtype = float)
@@ -204,7 +209,7 @@ def main():
 
             mask = computeTriangleMask(triangle, gridX, gridY)
 
-            frameBuffer[mask] = (200, 200, 200)
+            frameBuffer[mask] = triangle.colour
 
         pygame.surfarray.blit_array(screen, frameBuffer)
 
