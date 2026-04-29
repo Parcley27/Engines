@@ -30,6 +30,18 @@ class Triangle:
 
     def __post_init__(self):
         self.originalPoints = [Point(point.x, point.y) for point in self.points]
+    
+    def centerPoint(self) -> Point:
+        centerX = sum(point.x for point in self.points) / len(self.points)
+        centerY = sum(point.y for point in self.points) / len(self.points)
+
+        return Point(centerX, centerY)
+
+    def originalCenterPoint(self) -> Point:
+        centerX = sum(point.x for point in self.originalPoints) / len(self.originalPoints)
+        centerY = sum(point.y for point in self.originalPoints) / len(self.originalPoints)
+
+        return Point(centerX, centerY)
 
     def translate(self, x, y):
         for point in self.points:
@@ -40,7 +52,45 @@ class Triangle:
         for i, point in enumerate(self.points):
             point.x = self.originalPoints[i].x + x
             point.y = self.originalPoints[i].y + y
-            
+        
+    def scale(self, factor):
+        for point in self.points:
+            point.x *= factor
+            point.y *= factor
+    
+    def scaleFromOriginal(self, factor):
+        for i, point in enumerate(self.points):
+            point.x = self.originalPoints[i].x * factor
+            point.y = self.originalPoints[i].y * factor
+
+    def rotate(self, angle):
+        cosAngle = math.cos(angle)
+        sinAngle = math.sin(angle)
+
+        center = self.originalCenterPoint()
+
+        for point in self.points:
+            newX = point.x * cosAngle - point.y * sinAngle + center.x * (1 - cosAngle) + center.y * sinAngle
+            newY = point.x * sinAngle + point.y * cosAngle + center.y * (1 - cosAngle) - center.x * sinAngle
+
+            point.x = newX
+            point.y = newY
+        
+    def rotateFromOriginal(self, angle):
+        cosAngle = math.cos(angle)
+        sinAngle = math.sin(angle)
+
+        center = self.originalCenterPoint()
+
+        for i, point in enumerate(self.points):
+            originalPoint = self.originalPoints[i]
+
+            newX = originalPoint.x * cosAngle - originalPoint.y * sinAngle + center.x * (1 - cosAngle) + center.y * sinAngle
+            newY = originalPoint.x * sinAngle + originalPoint.y * cosAngle + center.y * (1 - cosAngle) - center.x * sinAngle
+
+            point.x = newX
+            point.y = newY
+
     def getPoints(self) -> list[np.ndarray]:
         return [point.toPixel() for point in self.points]
 
@@ -142,7 +192,9 @@ def main():
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
 
         for triangle in triangles:
-            triangle.translateFromOriginal(0.1 + math.sin(frameCount * 0.1) * 0.1 , 0.1 + math.cos(frameCount * 0.1) * 0.1)
+            #triangle.translateFromOriginal(0.1 + math.sin(frameCount * 0.1) * 0.1 , 0.1 + math.cos(frameCount * 0.1) * 0.1)
+            #triangle.rotateFromOriginal(frameCount * 0.01)
+            triangle.rotate(0.01)
             mask = computeTriangleMask(triangle, gridX, gridY)
 
             frameBuffer[mask] = (200, 200, 200)
