@@ -27,7 +27,7 @@ class Point:
 class Triangle:
     points: list[Point]
     originalPoints: list[Point] = field(default_factory = list)
-
+    
     def __post_init__(self):
         self.originalPoints = [Point(point.x, point.y) for point in self.points]
     
@@ -196,9 +196,12 @@ def main():
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
 
         for triangle in triangles:
-            #triangle.translateFromOriginal(0.1 + math.sin(frameCount * 0.1) * 0.1 , 0.1 + math.cos(frameCount * 0.1) * 0.1)
-            #triangle.rotateFromOriginal(frameCount * 0.01)
-            triangle.scaleFromOriginal(1 + math.sin(frameCount * 0.01) * 0.5)
+            triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01)
+            triangle.rotate(0.01)
+            current = 1 + math.sin(frameCount * 0.05) * 0.3
+            previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.3
+            triangle.scale(current / previous)
+
             mask = computeTriangleMask(triangle, gridX, gridY)
 
             frameBuffer[mask] = (200, 200, 200)
