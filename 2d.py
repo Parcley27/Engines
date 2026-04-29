@@ -54,14 +54,18 @@ class Triangle:
             point.y = self.originalPoints[i].y + y
         
     def scale(self, factor):
+        center = self.centerPoint()
+
         for point in self.points:
-            point.x *= factor
-            point.y *= factor
+            point.x = center.x + (point.x - center.x) * factor
+            point.y = center.y + (point.y - center.y) * factor
     
     def scaleFromOriginal(self, factor):
+        center = self.originalCenterPoint()
+
         for i, point in enumerate(self.points):
-            point.x = self.originalPoints[i].x * factor
-            point.y = self.originalPoints[i].y * factor
+            point.x = center.x + (self.originalPoints[i].x - center.x) * factor
+            point.y = center.y + (self.originalPoints[i].y - center.y) * factor
 
     def rotate(self, angle):
         cosAngle = math.cos(angle)
@@ -194,7 +198,7 @@ def main():
         for triangle in triangles:
             #triangle.translateFromOriginal(0.1 + math.sin(frameCount * 0.1) * 0.1 , 0.1 + math.cos(frameCount * 0.1) * 0.1)
             #triangle.rotateFromOriginal(frameCount * 0.01)
-            triangle.rotate(0.01)
+            triangle.scaleFromOriginal(1 + math.sin(frameCount * 0.01) * 0.5)
             mask = computeTriangleMask(triangle, gridX, gridY)
 
             frameBuffer[mask] = (200, 200, 200)
