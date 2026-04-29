@@ -98,6 +98,15 @@ class Triangle:
     def asPixels(self) -> list[np.ndarray]:
         return [point.toPixel() for point in self.points]
 
+def fan(points: list[np.ndarray]) -> list[Triangle]:
+    triangles = []
+
+    for i in range(1, len(points) - 1):
+        trianglePoints = [Point(points[0].x, points[0].y), Point(points[i].x, points[i].y), Point(points[i+1].x, points[i+1].y)]
+        triangles.append(Triangle(trianglePoints))
+    
+    return triangles
+
 def constructVector(pointA: np.ndarray, pointB: np.ndarray) -> np.ndarray:
     if len(pointA) != len(pointB): return np.array([0, 0], dtype = float)
 
@@ -114,7 +123,7 @@ def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) 
 
     return lineAB[0] * lineAP[1] - lineAB[1] * lineAP[0]
 
-def computeTriangleMask(triangle: Triangle, gridX: int, gridY: int):
+def computeTriangleMask(triangle: Triangle, gridX: int, gridY: int) -> np.ndarray:
     edges = []
 
     trianglePoints = triangle.asPixels()
@@ -164,10 +173,37 @@ def main():
 
     ]
 
-    triangles = [Triangle(pointSet) for pointSet in pointSets]
+    fanPoints = [
+        Point(0.50, 0.25),
+        Point(0.45, 0.26),
+        Point(0.40, 0.27),
+        Point(0.35, 0.30),
+        Point(0.30, 0.35),
+        Point(0.25, 0.50),
+        Point(0.30, 0.65),
+        Point(0.35, 0.70),
+        Point(0.40, 0.73),
+        Point(0.45, 0.74),
+        Point(0.50, 0.75),
+        Point(0.55, 0.74),
+        Point(0.60, 0.73),
+        Point(0.65, 0.70),
+        Point(0.70, 0.65),
+        Point(0.75, 0.50),
+        Point(0.70, 0.35),
+        Point(0.65, 0.30),
+        Point(0.60, 0.27),
+        Point(0.55, 0.26),
+        #Point(0.7, 0.6)
+        
+    ]
+
+
+    #triangles = [Triangle(pointSet) for pointSet in pointSets]
+    triangles = fan(fanPoints)
 
     for triangle in triangles:
-        triangle.colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        triangle.colour = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
 
     gridX, gridY = np.meshgrid(np.arange(width), np.arange(height), indexing="ij")
 
@@ -188,8 +224,9 @@ def main():
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
 
         for triangle in triangles:
-            triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01)
-            triangle.rotate(0.01)
+            #triangle.translateFromOriginal(math.sin(frameCount * 0.05) * 0.2 , math.cos(frameCount * 0.05) * 0.2)
+            #triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01)
+            #triangle.rotate(0.01)
             current = 1 + math.sin(frameCount * 0.05) * 0.3
             previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.3
             triangle.scale(current / previous)
