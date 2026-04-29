@@ -7,9 +7,7 @@ import math
 from dataclasses import dataclass, field
 
 width = int(1920 / 4)
-#width = 500
 height = int(1280 / 4)
-#height = 300
 
 dimensions = [width, height]
 
@@ -97,7 +95,7 @@ class Triangle:
             point.x = newX
             point.y = newY
 
-    def getPoints(self) -> list[np.ndarray]:
+    def asPixels(self) -> list[np.ndarray]:
         return [point.toPixel() for point in self.points]
 
 def constructVector(pointA: np.ndarray, pointB: np.ndarray) -> np.ndarray:
@@ -119,7 +117,7 @@ def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) 
 def computeTriangleMask(triangle: Triangle, gridX: int, gridY: int):
     edges = []
 
-    trianglePoints = triangle.getPoints()
+    trianglePoints = triangle.asPixels()
 
     for i in range(3):
         pointA = trianglePoints[i]
@@ -136,7 +134,7 @@ def computeTriangleMask(triangle: Triangle, gridX: int, gridY: int):
     )
 
 def isInTriangle(triangle: Triangle, testPoint: np.ndarray) -> bool:
-    trianglePoints = triangle.getPoints()
+    trianglePoints = triangle.asPixels()
     edges = []
 
     for i in range(3):
@@ -152,12 +150,12 @@ def main():
 
     pygame.init()
     pygame.display.set_caption("2D Engine")
-    screen = pygame.display.set_mode(dimensions)    
+
+    screen = pygame.display.set_mode(dimensions)
     clock = pygame.time.Clock()
     
     isRunning = True
     frameCount = 0
-    #frameTimes = []
 
     pointSets = [
         [Point(0.1, 0.1), Point(0.5, 0.1), Point(0.1, 0.5)], 
@@ -170,14 +168,6 @@ def main():
 
     for triangle in triangles:
         triangle.colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-    
-    #xSide = np.arange(width, dtype = float)
-    #ySide = np.arange(height, dtype = float)
-
-    #xSide = np.arange(width, dtype = np.uint16)
-    #ySide = np.arange(height, dtype = np.uint16)
-
-    #gridX, gridY = np.meshgrid(xSide, ySide, indexing = "ij")
 
     gridX, gridY = np.meshgrid(np.arange(width), np.arange(height), indexing="ij")
 
@@ -191,11 +181,8 @@ def main():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 isRunning = False
 
-        #startTime = time.perf_counter()
-
         frameCount += 1
 
-        #frameBuffer[:, :] = (255, 0, 255)
         frameBuffer[:] = 0
         frameBuffer[:, :, 0] = (255 * (width  - gridX) / width).astype(np.uint8)
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
@@ -217,19 +204,7 @@ def main():
 
         pygame.display.flip()
 
-        #stopTime = time.perf_counter()
-        #timeDelta = stopTime - startTime
-
-        #frameTimes.append(timeDelta)
-        #averageTime = sum(frameTimes) / len(frameTimes)
-
-        #print(f"""Render time for frame {len(frameTimes)}: {(timeDelta * 1000):.3f}ms""")
-        #print(f"""Average frame time: {(averageTime * 1000):.3f}ms | Average FPS: {(1 / averageTime):.3f}""")
-
         clock.tick(fps)
-        #time.sleep(5)
-
-        #isRunning = False
     
     pygame.quit()
 
