@@ -124,7 +124,7 @@ def fan(points: list[np.ndarray]) -> list[Triangle]:
     
     return triangles
 
-def constructVector(pointA: np.ndarray, pointB: np.ndarray) -> np.ndarray:
+#def constructVector(pointA: np.ndarray, pointB: np.ndarray) -> np.ndarray:
     if len(pointA) != len(pointB): return np.array([0, 0], dtype = float)
 
     coordinates = []
@@ -184,8 +184,8 @@ def main():
     frameCount = 0
 
     pointSets = [
-        [Point(0.1, 0.1, 0),  Point(0.8, 0.1, 0),  Point(0.1, 0.8, 0)], 
-        [Point(0.9, 0.9, 1), Point(0.2, 0.9, 1), Point(0.9, 0.2, 1)], 
+        [Point(0.0, 0.0, 0.0),  Point(1.0, 0.0, 0.0),  Point(0.0, 1.0, 0.0)], 
+        [Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 1.0), Point(1.0, 0.0, 1.0)], 
 
     ]
 
@@ -251,13 +251,16 @@ def main():
             #triangle.translateFromOriginal(math.sin(frameCount * 0.05) * 0.2 , math.cos(frameCount * 0.05) * 0.2, 0)
             triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01, 0)
             #triangle.rotate(0.01)
-            #current = 1 + math.sin(frameCount * 0.05) * 0.3
-            #previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.3
-            #triangle.scale(current / previous)
+            current = 1 + math.sin(frameCount * 0.05) * 0.4
+            previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.4
+            triangle.scale(current / previous)
+        
+        sortedTriangles = sorted(triangles, key = lambda t: t.centerPoint().z, reverse = True)
 
+        for triangle in sortedTriangles:
             mask = computeTriangleMask(triangle, gridX, gridY)
-
             frameBuffer[mask] = triangle.colour
+
 
         pygame.surfarray.blit_array(screen, frameBuffer)
 
