@@ -9,7 +9,8 @@ from dataclasses import dataclass, field
 width = int(1920 / 4)
 height = int(1280 / 4)
 
-fieldOfView = math.radians(90)
+fieldOfView = math.radians(70) # horizontal
+focalLength = (width / 2) / math.tan(fieldOfView / 2)
 
 screenDimensions = [width, height]
 
@@ -23,9 +24,11 @@ class Point:
 
     def toPixel(self) -> np.ndarray:
         #scale = (-self.z - 5) / -5
-        scale = (self.z + 5) / 5
+        depth = self.z + 5
+        pixelX = (self.x / depth) * focalLength + width / 2
+        pixelY = (-self.y / depth) * focalLength + height / 2
 
-        return np.array([width / 2 + self.x * height * scale, height / 2 - self.y * height * scale])
+        return np.array([pixelX, pixelY])
 
 @dataclass
 class Triangle:
@@ -221,8 +224,8 @@ def main():
     triangles = [Triangle(pointSet) for pointSet in pointSets]
     #triangles = fan(fanPoints)
 
-    #for triangle in triangles:
-    #    triangle.colour = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
+    for triangle in triangles:
+        triangle.colour = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
 
     gridX, gridY = np.meshgrid(np.arange(width), np.arange(height), indexing="ij")
 
