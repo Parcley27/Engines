@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 width = int(1920 / 4)
 height = int(1280 / 4)
 
+cameraDepth = 3
+
 fieldOfView = math.radians(70) # horizontal
 focalLength = (width / 2) / math.tan(fieldOfView / 2)
 
@@ -24,7 +26,7 @@ class Point:
 
     def toPixel(self) -> np.ndarray:
         #scale = (-self.z - 5) / -5
-        depth = self.z + 5
+        depth = self.z + cameraDepth
         pixelX = (self.x / depth) * focalLength + width / 2
         pixelY = (-self.y / depth) * focalLength + height / 2
 
@@ -183,7 +185,7 @@ def main():
 
     pointSets = [
         [Point(0.1, 0.1, 0),  Point(0.8, 0.1, 0),  Point(0.1, 0.8, 0)], 
-        [Point(0.9, 0.9, -1), Point(0.2, 0.9, -1), Point(0.9, 0.2, -1)], 
+        [Point(0.9, 0.9, 1), Point(0.2, 0.9, 1), Point(0.9, 0.2, 1)], 
 
     ]
 
