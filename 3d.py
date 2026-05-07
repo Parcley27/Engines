@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 width = int(1920 / 4)
 height = int(1280 / 4)
 
-cameraDepth = 3
+cameraDepth = 5
 
 fieldOfView = math.radians(70) # horizontal
 focalLength = (width / 2) / math.tan(fieldOfView / 2)
@@ -115,11 +115,35 @@ class Triangle:
     def asPixels(self) -> list[np.ndarray]:
         return [point.toPixel() for point in self.points]
 
+def safeFloat(value, default = 0.0) -> float:
+    try:
+        return float(value)
+    
+    except (ValueError, TypeError):
+        return default
+
+def loadModel(filePath: str) -> list[np.ndarray]:
+    print("Loading model: " + filePath)
+    points = []
+    
+    with open(filePath, "r") as file:
+        for line in file:
+            if line.startswith("v "):
+                lineData = line.split()
+                
+                x = float(lineData[1])
+                y = float(lineData[2])
+                z = float(lineData[3])
+
+                points.append(Point(x, y, z))
+    
+    return points
+
 def fan(points: list[np.ndarray]) -> list[Triangle]:
     triangles = []
 
     for i in range(1, len(points) - 1):
-        trianglePoints = [Point(points[0].x, points[0].y), Point(points[i].x, points[i].y), Point(points[i+1].x, points[i+1].y)]
+        trianglePoints = [Point(points[0].x, points[0].y, points[0].z), Point(points[i].x, points[i].y, points[i].z), Point(points[i + 1].x, points[i + 1].y, points[i + 1].z)]
         triangles.append(Triangle(trianglePoints))
     
     return triangles
@@ -172,10 +196,10 @@ def isInTriangle(triangle: Triangle, testPoint: np.ndarray) -> bool:
     return all(edge >= 0 for edge in edges) or all(edge <= 0 for edge in edges)
 
 def main():
-    print("Hello, Game Engine!")
+    print("Hello, 3D Game Engine!")
 
     pygame.init()
-    pygame.display.set_caption("2D Engine")
+    pygame.display.set_caption("3D Engine")
 
     screen = pygame.display.set_mode(screenDimensions)
     clock = pygame.time.Clock()
@@ -183,6 +207,10 @@ def main():
     isRunning = True
     frameCount = 0
 
+    points = loadModel("cube.obj")
+    print(points)
+
+    """
     pointSets = [
         [Point(0.0, 0.0, 0.0),  Point(1.0, 0.0, 0.0),  Point(0.0, 1.0, 0.0)], 
         [Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 1.0), Point(1.0, 0.0, 1.0)], 
@@ -193,38 +221,16 @@ def main():
         for point in pointSet:
             point.x -= 0.5
             point.y -= 0.5
+            """
+    modelPoints = loadModel("cube.obj")
+    pointSets = [
+        [modelPoints[0], modelPoints[1], modelPoints[2]],
+        [modelPoints[0], modelPoints[2], modelPoints[3]],
 
-    """
-
-    fanPoints = [
-        Point(0.50, 0.25),
-        Point(0.45, 0.26),
-        Point(0.40, 0.27),
-        Point(0.35, 0.30),
-        Point(0.30, 0.35),
-        Point(0.25, 0.50),
-        Point(0.30, 0.65),
-        Point(0.35, 0.70),
-        Point(0.40, 0.73),
-        Point(0.45, 0.74),
-        Point(0.50, 0.75),
-        Point(0.55, 0.74),
-        Point(0.60, 0.73),
-        Point(0.65, 0.70),
-        Point(0.70, 0.65),
-        Point(0.75, 0.50),
-        Point(0.70, 0.35),
-        Point(0.65, 0.30),
-        Point(0.60, 0.27),
-        Point(0.55, 0.26),
-        #Point(0.7, 0.6)
-        
     ]
 
-    """
-
-    triangles = [Triangle(pointSet) for pointSet in pointSets]
-    #triangles = fan(fanPoints)
+    #triangles = [Triangle(pointSet) for pointSet in pointSets]
+    triangles = fan(modelPoints)
 
     for triangle in triangles:
         triangle.colour = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
@@ -249,7 +255,7 @@ def main():
 
         for triangle in triangles:
             #triangle.translateFromOriginal(math.sin(frameCount * 0.05) * 0.2 , math.cos(frameCount * 0.05) * 0.2, 0)
-            triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01, 0)
+            #triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01, 0)
             #triangle.rotate(0.01)
             current = 1 + math.sin(frameCount * 0.05) * 0.4
             previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.4
