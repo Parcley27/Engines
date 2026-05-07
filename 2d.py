@@ -255,7 +255,7 @@ def main():
             previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.4
             triangle.scale(current / previous)
         
-        sortedTriangles = sorted(triangles, key = lambda t: t.centerPoint().z, reverse = True)
+        sortedTriangles = sorted(triangles, key = lambda triangle: triangle.centerPoint().z, reverse = True)
 
         for triangle in sortedTriangles:
             mask = computeTriangleMask(triangle, gridX, gridY)
