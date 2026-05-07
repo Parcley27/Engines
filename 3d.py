@@ -162,6 +162,8 @@ def loadModel(filePath: str) -> list[np.ndarray]:
                     facePointData.append(points[vertex - 1])
 
                 triangles.extend(fan(facePointData))
+
+    print(f"Loaded {len(triangles)} triangles")
     
     return triangles
 
@@ -233,38 +235,11 @@ def main():
     isRunning = True
     frameCount = 0
 
-    #points = loadModel("cube.obj")
-    #print(points)
-
-    """
-    pointSets = [
-        [Point(0.0, 0.0, 0.0),  Point(1.0, 0.0, 0.0),  Point(0.0, 1.0, 0.0)], 
-        [Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 1.0), Point(1.0, 0.0, 1.0)], 
-
-    ]
-
-    for pointSet in pointSets:
-        for point in pointSet:
-            point.x -= 0.5
-            point.y -= 0.5
-            """
-    #modelPoints = loadModel("cube.obj")
-    """
-    pointSets = [
-        [modelPoints[0], modelPoints[1], modelPoints[2]],
-        [modelPoints[0], modelPoints[2], modelPoints[3]],
-
-    ]
-    """
-
-    #triangles = [Triangle(pointSet) for pointSet in pointSets]
-    #triangles = fan(modelPoints)
     triangles = loadModel("cube.obj")
-
-    print(triangles)
 
     for triangle in triangles:
         triangle.colour = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
+        triangle.translate(-4, 0, 0)
 
     gridX, gridY = np.meshgrid(np.arange(width), np.arange(height), indexing="ij")
 
@@ -280,6 +255,8 @@ def main():
 
         frameCount += 1
 
+        translateConstant = math.sin(frameCount * 0.1) * 0.4
+
         frameBuffer[:] = 0
         frameBuffer[:, :, 0] = (255 * (width  - gridX) / width).astype(np.uint8)
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
@@ -287,10 +264,12 @@ def main():
         for triangle in triangles:
             #triangle.translateFromOriginal(math.sin(frameCount * 0.05) * 0.2 , math.cos(frameCount * 0.05) * 0.2, 0)
             #triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01, 0)
+            triangle.translate(translateConstant, 0, 0)
             #triangle.rotate(0.01)
-            current = 1 + math.sin(frameCount * 0.05) * 0.4
-            previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.4
-            triangle.scale(current / previous)
+            #current = 1 + math.sin(frameCount * 0.05) * 0.4
+            #previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.4
+            #triangle.scaleFromOriginal(0.8)
+            #triangle.scale(current / previous)
         
         sortedTriangles = sorted(triangles, key = lambda triangle: triangle.centerPoint().z, reverse = True)
 
