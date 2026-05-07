@@ -115,6 +115,13 @@ class Triangle:
     def asPixels(self) -> list[np.ndarray]:
         return [point.toPixel() for point in self.points]
 
+def safeInt(value, default = 0) -> int:
+    try:
+        return int(value)
+    
+    except (ValueError, TypeError):
+        return default
+
 def safeFloat(value, default = 0.0) -> float:
     try:
         return float(value)
@@ -124,11 +131,14 @@ def safeFloat(value, default = 0.0) -> float:
 
 def loadModel(filePath: str) -> list[np.ndarray]:
     print("Loading model: " + filePath)
+
     points = []
+
+    triangles = []
     
     with open(filePath, "r") as file:
         for line in file:
-            if line.startswith("v "):
+            if line.startswith("v "): # vertices
                 lineData = line.split()
                 
                 x = float(lineData[1])
@@ -136,8 +146,24 @@ def loadModel(filePath: str) -> list[np.ndarray]:
                 z = float(lineData[3])
 
                 points.append(Point(x, y, z))
+            
+            elif line.startswith("f "):
+                faceData = line.split()
+                facePointData = []
+
+                faceVertexData = []
+                for segment in faceData:
+                    segmentData = segment.split("/")
+
+                    for i in range(len(segmentData) - 2):
+                        faceVertexData.append(safeInt(segmentData[i]))
+                
+                for vertex in faceVertexData:
+                    facePointData.append(points[vertex - 1])
+
+                triangles.extend(fan(facePointData))
     
-    return points
+    return triangles
 
 def fan(points: list[np.ndarray]) -> list[Triangle]:
     triangles = []
@@ -207,8 +233,8 @@ def main():
     isRunning = True
     frameCount = 0
 
-    points = loadModel("cube.obj")
-    print(points)
+    #points = loadModel("cube.obj")
+    #print(points)
 
     """
     pointSets = [
@@ -222,15 +248,20 @@ def main():
             point.x -= 0.5
             point.y -= 0.5
             """
-    modelPoints = loadModel("cube.obj")
+    #modelPoints = loadModel("cube.obj")
+    """
     pointSets = [
         [modelPoints[0], modelPoints[1], modelPoints[2]],
         [modelPoints[0], modelPoints[2], modelPoints[3]],
 
     ]
+    """
 
     #triangles = [Triangle(pointSet) for pointSet in pointSets]
-    triangles = fan(modelPoints)
+    #triangles = fan(modelPoints)
+    triangles = loadModel("cube.obj")
+
+    print(triangles)
 
     for triangle in triangles:
         triangle.colour = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
