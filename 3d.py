@@ -129,7 +129,7 @@ def safeFloat(value, default = 0.0) -> float:
     except (ValueError, TypeError):
         return default
 
-def loadModel(filePath: str) -> list[np.ndarray]:
+def loadModel(filePath: str) -> list[Triangle]:
     print("Loading model: " + filePath)
 
     points = []
@@ -167,7 +167,7 @@ def loadModel(filePath: str) -> list[np.ndarray]:
     
     return triangles
 
-def fan(points: list[np.ndarray]) -> list[Triangle]:
+def fan(points: list[Point]) -> list[Triangle]:
     triangles = []
 
     for i in range(1, len(points) - 1):
@@ -192,7 +192,7 @@ def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) 
 
     return lineAB[0] * lineAP[1] - lineAB[1] * lineAP[0]
 
-def computeTriangleMask(triangle: Triangle, gridX: int, gridY: int) -> np.ndarray:
+def computeTriangleMask(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) -> np.ndarray:
     edges = []
 
     trianglePoints = triangle.asPixels()

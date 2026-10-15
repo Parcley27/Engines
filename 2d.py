@@ -115,11 +115,11 @@ class Triangle:
     def asPixels(self) -> list[np.ndarray]:
         return [point.toPixel() for point in self.points]
 
-def fan(points: list[np.ndarray]) -> list[Triangle]:
+def fan(points: list[Point]) -> list[Triangle]:
     triangles = []
 
     for i in range(1, len(points) - 1):
-        trianglePoints = [Point(points[0].x, points[0].y), Point(points[i].x, points[i].y), Point(points[i+1].x, points[i+1].y)]
+        trianglePoints = [Point(points[0].x, points[0].y, points[0].z), Point(points[i].x, points[i].y, points[i].z), Point(points[i + 1].x, points[i + 1].y, points[i + 1].z)]
         triangles.append(Triangle(trianglePoints))
     
     return triangles
@@ -140,7 +140,7 @@ def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) 
 
     return lineAB[0] * lineAP[1] - lineAB[1] * lineAP[0]
 
-def computeTriangleMask(triangle: Triangle, gridX: int, gridY: int) -> np.ndarray:
+def computeTriangleMask(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) -> np.ndarray:
     edges = []
 
     trianglePoints = triangle.asPixels()
