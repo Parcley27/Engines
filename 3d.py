@@ -199,7 +199,7 @@ def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) 
 
     return lineAB[0] * lineAP[1] - lineAB[1] * lineAP[0]
 
-def rasterizeTriangle(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
+def rasterizeTriangle(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) -> tuple[tuple[slice, slice], np.ndarray, np.ndarray] | None:
     if any(point.z + cameraDepth <= 0 for point in triangle.points):
         return None
 
@@ -210,19 +210,24 @@ def rasterizeTriangle(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) 
     pointXs = [trianglePoint[0] for trianglePoint in trianglePoints]
     pointYs = [trianglePoint[1] for trianglePoint in trianglePoints]
 
-    minX = max(min(pointXs), 0)
-    maxX = min(max(pointXs), width - 1)
-    minY = max(min(pointYs), 0)
-    maxY = min(max(pointYs), height - 1)
+    minX = int(max(min(pointXs), 0))
+    maxX = int(min(max(pointXs), width - 1))
+    minY = int(max(min(pointYs), 0))
+    maxY = int(min(max(pointYs), height - 1))
 
     if minX > maxX or minY > maxY:
         return None
+
+    region = (slice(minX, maxX + 1), slice(minY, maxY + 1))
+
+    regionX = gridX[region]
+    regionY = gridY[region]
 
     for i in range(3):
         pointA = trianglePoints[i]
         pointB = trianglePoints[(i + 1) % 3]
 
-        edge = (pointB[0] - pointA[0]) * (gridY - pointA[1]) - (pointB[1] - pointA[1]) * (gridX - pointA[0])
+        edge = (pointB[0] - pointA[0]) * (regionY - pointA[1]) - (pointB[1] - pointA[1]) * (regionX - pointA[0])
 
         edges.append(edge)
 
@@ -248,7 +253,7 @@ def rasterizeTriangle(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) 
     depth = np.full(mask.shape, np.inf, dtype = np.float32)
     np.divide(1, inverseDepth, out = depth, where = mask)
 
-    return mask, depth
+    return region, mask, depth
 
 def computeTriangleMask(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) -> np.ndarray:
     edges = []
@@ -337,12 +342,15 @@ def main():
             coverage = rasterizeTriangle(triangle, gridX, gridY)
 
             if coverage is not None:
-                mask, depth = coverage
+                region, mask, depth = coverage
 
-                visiblePixels = mask & (depth < depthBuffer)
+                frameView = frameBuffer[region]
+                depthView = depthBuffer[region]
 
-                frameBuffer[visiblePixels] = triangle.colour
-                depthBuffer[visiblePixels] = depth[visiblePixels]
+                visiblePixels = mask & (depth < depthView)
+
+                frameView[visiblePixels] = triangle.colour
+                depthView[visiblePixels] = depth[visiblePixels]
 
             #triangle.translateFromOriginal(math.sin(frameCount * 0.05) * 0.2 , math.cos(frameCount * 0.05) * 0.2, 0)
             #triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01, 0)
