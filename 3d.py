@@ -18,6 +18,11 @@ screenDimensions = [width, height]
 
 fps = 60
 
+testSpeed = 0.1
+
+colours = ["darkred", "red", "darkorange", "orange", "gold", "yellow", "darkgreen", "green", "darkblue", "blue", "purple", "violet"]
+colourIndex = 0
+
 @dataclass
 class Point:
     x: float
@@ -186,11 +191,50 @@ def fan(points: list[Point]) -> list[Triangle]:
     
     return np.array(coordinates, dtype = float)
 
+# cross product sign: positive if testPoint is to the right of line AB, negative if to the left (inside)
+# magnitude: 2 * area of triangle pointA pointB testPoint
 def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) -> float:
     lineAB = pointB - pointA
     lineAP = testPoint - pointA
 
     return lineAB[0] * lineAP[1] - lineAB[1] * lineAP[0]
+
+def rasterizeTriangle(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
+    edges = []
+
+    trianglePoints = triangle.asPixels()
+
+    for i in range(3):
+        pointA = trianglePoints[i]
+        pointB = trianglePoints[(i + 1) % 3]
+
+        edge = (pointB[0] - pointA[0]) * (gridY - pointA[1]) - (pointB[1] - pointA[1]) * (gridX - pointA[0])
+
+        edges.append(edge)
+
+    area = edgeFunction(trianglePoints[0], trianglePoints[1], trianglePoints[2])
+
+    # head one ie no visable width
+    if area == 0:
+        return None
+
+    vertex0Proximity = edges[1] / area
+    vertex1Proximity = edges[2] / area
+    vertex2Proximity = edges[0] / area
+
+    mask = (vertex0Proximity >= 0) & (vertex1Proximity >= 0) & (vertex2Proximity >= 0)
+
+    inverseDepth = (
+        vertex0Proximity / (triangle.points[0].z + cameraDepth) +
+        vertex1Proximity / (triangle.points[1].z + cameraDepth) +
+        vertex2Proximity / (triangle.points[2].z + cameraDepth)
+
+    )
+
+    depth = np.full(mask.shape, np.inf, dtype = np.float32)
+    np.divide(1, inverseDepth, out = depth, where = mask)
+
+    return mask, depth
 
 def computeTriangleMask(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) -> np.ndarray:
     edges = []
@@ -224,6 +268,7 @@ def isInTriangle(triangle: Triangle, testPoint: np.ndarray) -> bool:
     return all(edge >= 0 for edge in edges) or all(edge <= 0 for edge in edges)
 
 def main():
+    global colourIndex
     print("Hello, 3D Game Engine!")
 
     pygame.init()
@@ -238,12 +283,17 @@ def main():
     triangles = loadModel("cube.obj")
 
     for triangle in triangles:
-        triangle.colour = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
+        colour = tuple(pygame.Color(colours[colourIndex]))
+        colourIndex = (colourIndex + 1) % len(colours)
+
+        triangle.colour = (colour[0], colour[1], colour[2])
+
         triangle.translate(-4, 0, 0)
 
     gridX, gridY = np.meshgrid(np.arange(width), np.arange(height), indexing="ij")
-
+    
     frameBuffer = np.zeros((width, height, 3), dtype = np.uint8)
+    depthBuffer = np.zeros((width, height), dtype = np.float32)
 
     while isRunning:
         for event in pygame.event.get():
@@ -255,28 +305,38 @@ def main():
 
         frameCount += 1
 
-        translateConstant = math.sin(frameCount * 0.1) * 0.4
+        translateConstant = math.sin(frameCount * 0.1 * testSpeed) * 0.4 * testSpeed
 
         frameBuffer[:] = 0
+        depthBuffer[:] = np.inf
+
+        # background
         frameBuffer[:, :, 0] = (255 * (width  - gridX) / width).astype(np.uint8)
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
 
+        # move stuff
+        for triangle in triangles: 
+            triangle.translate(translateConstant, 0, 0)
+
+        # render stuff
         for triangle in triangles:
+            coverage = rasterizeTriangle(triangle, gridX, gridY)
+
+            if coverage is not None:
+                mask, depth = coverage
+
+                visiblePixels = mask & (depth < depthBuffer)
+
+                frameBuffer[visiblePixels] = triangle.colour
+                depthBuffer[visiblePixels] = depth[visiblePixels]
+
             #triangle.translateFromOriginal(math.sin(frameCount * 0.05) * 0.2 , math.cos(frameCount * 0.05) * 0.2, 0)
             #triangle.translate(math.sin(frameCount * 0.1) * 0.01 , math.cos(frameCount * 0.1) * 0.01, 0)
-            triangle.translate(translateConstant, 0, 0)
             #triangle.rotate(0.01)
             #current = 1 + math.sin(frameCount * 0.05) * 0.4
             #previous = 1 + math.sin((frameCount - 1) * 0.05) * 0.4
             #triangle.scaleFromOriginal(0.8)
             #triangle.scale(current / previous)
-        
-        sortedTriangles = sorted(triangles, key = lambda triangle: triangle.centerPoint().z, reverse = True)
-
-        for triangle in sortedTriangles:
-            mask = computeTriangleMask(triangle, gridX, gridY)
-            frameBuffer[mask] = triangle.colour
-
 
         pygame.surfarray.blit_array(screen, frameBuffer)
 
