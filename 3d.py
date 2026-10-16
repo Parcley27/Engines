@@ -200,9 +200,23 @@ def edgeFunction(pointA: np.ndarray, pointB: np.ndarray, testPoint: np.ndarray) 
     return lineAB[0] * lineAP[1] - lineAB[1] * lineAP[0]
 
 def rasterizeTriangle(triangle: Triangle, gridX: np.ndarray, gridY: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
+    if any(point.z + cameraDepth <= 0 for point in triangle.points):
+        return None
+
     edges = []
 
     trianglePoints = triangle.asPixels()
+
+    pointXs = [trianglePoint[0] for trianglePoint in trianglePoints]
+    pointYs = [trianglePoint[1] for trianglePoint in trianglePoints]
+
+    minX = max(min(pointXs), 0)
+    maxX = min(max(pointXs), width - 1)
+    minY = max(min(pointYs), 0)
+    maxY = min(max(pointYs), height - 1)
+
+    if minX > maxX or minY > maxY:
+        return None
 
     for i in range(3):
         pointA = trianglePoints[i]
