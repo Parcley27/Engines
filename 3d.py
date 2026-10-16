@@ -290,7 +290,7 @@ def main():
 
         triangle.translate(-4, 0, 0)
 
-    gridX, gridY = np.meshgrid(np.arange(width), np.arange(height), indexing="ij")
+    gridX, gridY = np.meshgrid(np.arange(width, dtype = np.float32), np.arange(height, dtype = np.float32), indexing="ij")
     
     frameBuffer = np.zeros((width, height, 3), dtype = np.uint8)
     depthBuffer = np.zeros((width, height), dtype = np.float32)
