@@ -21,6 +21,7 @@ screenDimensions = [width, height]
 fps = 60
 
 testSpeed = 0.1
+testRadius = 1.75
 
 #model = "cube"
 model = "sphere"
@@ -372,8 +373,6 @@ def main():
 
         triangle.colour = (colour[0], colour[1], colour[2])
 
-        triangle.translate(-4, 0, 0)
-
     gridX, gridY = np.meshgrid(np.arange(width, dtype = np.float32), np.arange(height, dtype = np.float32), indexing="ij")
     
     frameBuffer = np.zeros((width, height, 3), dtype = np.uint8)
@@ -389,7 +388,9 @@ def main():
 
         frameCount += 1
 
-        translateConstant = math.sin(frameCount * 0.1 * testSpeed) * 0.4 * testSpeed
+        angle = frameCount * 0.25 * testSpeed
+        circleX = math.cos(angle) * testRadius
+        circleY = math.sin(angle) * testRadius
 
         frameBuffer[:] = 0
         depthBuffer[:] = np.inf
@@ -400,7 +401,7 @@ def main():
 
         # move stuff
         for triangle in triangles: 
-            triangle.translate(translateConstant, 0, 0)
+            triangle.translateFromOriginal(circleX, circleY, 0)
             #triangle.rotate(Quaternion.fromAxisAngle(np.array([1, 1, 1]), 0.006))
 
         # render stuff
