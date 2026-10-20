@@ -22,6 +22,9 @@ fps = 60
 
 testSpeed = 0.1
 
+#model = "cube"
+model = "sphere"
+
 colours = ["darkred", "red", "darkorange", "orange", "gold", "yellow", "darkgreen", "green", "darkblue", "blue", "purple", "violet"]
 colourIndex = 0
 
@@ -361,7 +364,7 @@ def main():
     isRunning = True
     frameCount = 0
 
-    triangles = loadModel("cube.obj")
+    triangles = loadModel(f"{model}.obj")
 
     for triangle in triangles:
         colour = tuple(pygame.Color(colours[colourIndex]))
@@ -398,7 +401,7 @@ def main():
         # move stuff
         for triangle in triangles: 
             triangle.translate(translateConstant, 0, 0)
-            triangle.rotate(Quaternion.fromAxisAngle(np.array([1, 1, 1]), 0.006))
+            #triangle.rotate(Quaternion.fromAxisAngle(np.array([1, 1, 1]), 0.006))
 
         # render stuff
         for triangle in triangles:
