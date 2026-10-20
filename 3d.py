@@ -8,8 +8,8 @@ import math
 
 from dataclasses import dataclass, field
 
-width = int(1920 / 4)
-height = int(1280 / 4)
+width = int(1920 / 2)
+height = int(1280 / 2)
 
 cameraDepth = 5
 
@@ -24,7 +24,7 @@ testSpeed = 0.1
 testRadius = 1.75
 
 #model = "cube"
-model = "sphere"
+modelName = "sphere"
 
 colours = ["darkred", "red", "darkorange", "orange", "gold", "yellow", "darkgreen", "green", "darkblue", "blue", "purple", "violet"]
 colourIndex = 0
@@ -183,8 +183,65 @@ class Triangle:
             point.y = float(rotatedPosition[1])
             point.z = float(rotatedPosition[2])
 
+    def rotateAroundPivot(self, rotation: Quaternion, pivot: Point):
+        rotationMatrix = rotation.toMatrix()
+
+        for point in self.points:
+            xOffset = point.x - pivot.x
+            yOffset = point.y - pivot.y
+            zOffset = point.z - pivot.z
+
+            rotatedOffset = rotationMatrix @ np.array([xOffset, yOffset, zOffset])
+
+            point.x = rotatedOffset[0] + pivot.x
+            point.y = rotatedOffset[1] + pivot.y
+            point.z = rotatedOffset[2] + pivot.z
+
     def asPixels(self) -> list[np.ndarray]:
         return [point.toPixel() for point in self.points]
+
+@dataclass
+class Model:
+    triangles: list[Triangle]
+    originalTriangles: list[Triangle] = field(default_factory = list)
+
+    centrePoint: Point = field(default_factory = lambda: Point(0, 0, 0))
+    originalCentrePoint: Point = field(default_factory = lambda: Point(0, 0, 0))
+
+    def __post_init__(self):
+        self.originalTriangles = []
+        for triangle in self.triangles:
+            newPoints = []
+
+            for point in triangle.points:
+                newPoints.append(Point(point.x, point.y, point.z))
+
+            self.originalTriangles.append(Triangle(newPoints, colour = triangle.colour))
+
+        self.centrePoint = self.findCentre()
+        self.originalCentrePoint = Point(self.centrePoint.x, self.centrePoint.y, self.centrePoint.z) # probably cheaper to just copy the point
+
+    def findCentre(self) -> Point:
+        centres = [triangle.centrePoint() for triangle in self.triangles]
+
+        midX = (max(centre.x for centre in centres) + min(centre.x for centre in centres)) / 2
+        midY = (max(centre.y for centre in centres) + min(centre.y for centre in centres)) / 2
+        midZ = (max(centre.z for centre in centres) + min(centre.z for centre in centres)) / 2
+
+        return Point(midX, midY, midZ)
+
+    def translate(self, x, y, z):
+        for triangle in self.triangles:
+            triangle.translate(x, y, z)
+
+    def translateFromOriginal(self, x, y, z):
+        for triangle in self.triangles:
+            triangle.translateFromOriginal(x, y, z)
+
+    def rotate(self, rotation: Quaternion):
+        for triangle in self.triangles:
+            triangle.rotateAroundPivot(rotation, self.centrePoint)
+
 
 def safeInt(value, default = 0) -> int:
     try:
@@ -365,9 +422,9 @@ def main():
     isRunning = True
     frameCount = 0
 
-    triangles = loadModel(f"{model}.obj")
+    model = Model(loadModel(f"{modelName}.obj"))
 
-    for triangle in triangles:
+    for triangle in model.triangles:
         colour = tuple(pygame.Color(colours[colourIndex]))
         colourIndex = (colourIndex + 1) % len(colours)
 
@@ -399,13 +456,16 @@ def main():
         frameBuffer[:, :, 0] = (255 * (width  - gridX) / width).astype(np.uint8)
         frameBuffer[:, :, 2] = (255 * (height - gridY) / height).astype(np.uint8)
 
+
         # move stuff
-        for triangle in triangles: 
-            triangle.translateFromOriginal(circleX, circleY, 0)
+        #model.translateFromOriginal(circleX, circleY, 0)
+        model.rotate(Quaternion.fromAxisAngle(np.array([1, 4, 1]), 0.01))
+        # for triangle in triangles: 
+        #     triangle.translateFromOriginal(circleX, circleY, 0)
             #triangle.rotate(Quaternion.fromAxisAngle(np.array([1, 1, 1]), 0.006))
 
         # render stuff
-        for triangle in triangles:
+        for triangle in model.triangles:
             coverage = rasterizeTriangle(triangle, gridX, gridY)
 
             if coverage is not None:
