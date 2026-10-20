@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pygame
 import numpy as np
 import time
@@ -22,6 +24,56 @@ testSpeed = 0.1
 
 colours = ["darkred", "red", "darkorange", "orange", "gold", "yellow", "darkgreen", "green", "darkblue", "blue", "purple", "violet"]
 colourIndex = 0
+
+@dataclass
+class Quaternion:
+    # vector part
+    x: float = 0
+    y: float = 0
+    z: float = 0
+
+    # scalar part
+    w: float = 1
+
+    @staticmethod
+    def fromAxisAngle(axis: np.ndarray, angle: float) -> Quaternion:
+        length = np.linalg.norm(axis)
+
+        if length == 0:
+            return Quaternion(0, 0, 0, 1)
+
+        axisX, axisY, axisZ = axis
+
+        s = math.sin(angle / 2) / length
+
+        return (Quaternion(axisX * s, axisY * s, axisZ * s, math.cos(angle / 2)))
+
+    def normalize(self) -> Quaternion:
+        length = math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2 + self.w ** 2)
+
+        return Quaternion(self.x / length, self.y / length, self.z / length, self.w / length)
+
+    def multiply(self, other: Quaternion) -> Quaternion:
+        x1, y1, z1, w1 = self.x, self.y, self.z, self.w
+        x2, y2, z2, w2 = other.x, other.y, other.z, other.w
+        
+        return Quaternion(
+            w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
+            w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2,
+            w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2,
+            w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
+
+        )
+
+    def toMatrix(self) -> np.ndarray:
+        x, y, z, w = self.x, self.y, self.z, self.w
+
+        return np.array([
+            [1 - 2*(y*y + z*z), 2*(x*y - z*w),     2*(x*z + y*w)],
+            [2*(x*y + z*w),     1 - 2*(x*x + z*z), 2*(y*z - x*w)],
+            [2*(x*z - y*w),     2*(y*z + x*w),     1 - 2*(x*x + y*y)],
+
+        ], dtype = np.float32)
 
 @dataclass
 class Point:
@@ -89,33 +141,43 @@ class Triangle:
             point.y = center.y + (self.originalPoints[i].y - center.y) * factor
             point.z = center.z + (self.originalPoints[i].z - center.z) * factor
 
-    def rotate(self, angle):
-        cosAngle = math.cos(angle)
-        sinAngle = math.sin(angle)
+    def rotate(self, rotation: Quaternion):
+        rotationMatrix = rotation.toMatrix()
 
-        center = self.originalCenterPoint()
+        center = self.centerPoint()
+        centerVector = np.array([center.x, center.y, center.z], dtype = np.float32)
 
         for point in self.points:
-            newX = point.x * cosAngle - point.y * sinAngle + center.x * (1 - cosAngle) + center.y * sinAngle
-            newY = point.x * sinAngle + point.y * cosAngle + center.y * (1 - cosAngle) - center.x * sinAngle
+            pointVector = np.array([point.x, point.y, point.z], dtype = np.float32)
 
-            point.x = newX
-            point.y = newY
+            offsetFromCenter = pointVector - centerVector
+            rotatedOffset = rotationMatrix @ offsetFromCenter
+
+            rotatedPosition = centerVector + rotatedOffset
+
+            point.x = rotatedPosition[0]
+            point.y = rotatedPosition[1]
+            point.z = rotatedPosition[2]
         
-    def rotateFromOriginal(self, angle):
-        cosAngle = math.cos(angle)
-        sinAngle = math.sin(angle)
+    def rotateFromOriginal(self, rotation: Quaternion):
+        rotationMatrix = rotation.toMatrix()
 
-        center = self.originalCenterPoint()
+        originalCenter = self.originalCenterPoint()
+        originalCenterVector = np.array([originalCenter.x, originalCenter.y, originalCenter.z], dtype = np.float32)
 
-        for i, point in enumerate(self.points):
-            originalPoint = self.originalPoints[i]
+        for pointIndex in range(len(self.points)):
+            point = self.points[pointIndex]
+            originalPoint = self.originalPoints[pointIndex]
 
-            newX = originalPoint.x * cosAngle - originalPoint.y * sinAngle + center.x * (1 - cosAngle) + center.y * sinAngle
-            newY = originalPoint.x * sinAngle + originalPoint.y * cosAngle + center.y * (1 - cosAngle) - center.x * sinAngle
+            originalPointVector = np.array([originalPoint.x, originalPoint.y, originalPoint.z], dtype = np.float32)
 
-            point.x = newX
-            point.y = newY
+            offsetFromCenter = originalPointVector - originalCenterVector
+            rotatedOffset = rotationMatrix @ offsetFromCenter
+            rotatedPosition = rotatedOffset + originalCenterVector
+
+            point.x = float(rotatedPosition[0])
+            point.y = float(rotatedPosition[1])
+            point.z = float(rotatedPosition[2])
 
     def asPixels(self) -> list[np.ndarray]:
         return [point.toPixel() for point in self.points]
@@ -336,6 +398,7 @@ def main():
         # move stuff
         for triangle in triangles: 
             triangle.translate(translateConstant, 0, 0)
+            triangle.rotate(Quaternion.fromAxisAngle(np.array([1, 1, 1]), 0.006))
 
         # render stuff
         for triangle in triangles:
