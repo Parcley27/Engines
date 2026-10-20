@@ -99,19 +99,19 @@ class Triangle:
     def __post_init__(self):
         self.originalPoints = [Point(point.x, point.y, point.z) for point in self.points]
     
-    def centerPoint(self) -> Point:
-        centerX = sum(point.x for point in self.points) / len(self.points)
-        centerY = sum(point.y for point in self.points) / len(self.points)
-        centerZ = sum(point.z for point in self.points) / len(self.points)
+    def centrePoint(self) -> Point:
+        centreX = sum(point.x for point in self.points) / len(self.points)
+        centreY = sum(point.y for point in self.points) / len(self.points)
+        centreZ = sum(point.z for point in self.points) / len(self.points)
 
-        return Point(centerX, centerY, centerZ)
+        return Point(centreX, centreY, centreZ)
 
-    def originalCenterPoint(self) -> Point:
-        centerX = sum(point.x for point in self.originalPoints) / len(self.originalPoints)
-        centerY = sum(point.y for point in self.originalPoints) / len(self.originalPoints)
-        centerZ = sum(point.z for point in self.originalPoints) / len(self.originalPoints)
+    def originalcentrePoint(self) -> Point:
+        centreX = sum(point.x for point in self.originalPoints) / len(self.originalPoints)
+        centreY = sum(point.y for point in self.originalPoints) / len(self.originalPoints)
+        centreZ = sum(point.z for point in self.originalPoints) / len(self.originalPoints)
 
-        return Point(centerX, centerY, centerZ)
+        return Point(centreX, centreY, centreZ)
 
     def translate(self, x, y, z):
         for point in self.points:
@@ -126,34 +126,34 @@ class Triangle:
             point.z = self.originalPoints[i].z + z
         
     def scale(self, factor):
-        center = self.centerPoint()
+        centre = self.centrePoint()
 
         for point in self.points:
-            point.x = center.x + (point.x - center.x) * factor
-            point.y = center.y + (point.y - center.y) * factor
-            point.z = center.z + (point.z - center.z) * factor
+            point.x = centre.x + (point.x - centre.x) * factor
+            point.y = centre.y + (point.y - centre.y) * factor
+            point.z = centre.z + (point.z - centre.z) * factor
     
     def scaleFromOriginal(self, factor):
-        center = self.originalCenterPoint()
+        centre = self.originalcentrePoint()
 
         for i, point in enumerate(self.points):
-            point.x = center.x + (self.originalPoints[i].x - center.x) * factor
-            point.y = center.y + (self.originalPoints[i].y - center.y) * factor
-            point.z = center.z + (self.originalPoints[i].z - center.z) * factor
+            point.x = centre.x + (self.originalPoints[i].x - centre.x) * factor
+            point.y = centre.y + (self.originalPoints[i].y - centre.y) * factor
+            point.z = centre.z + (self.originalPoints[i].z - centre.z) * factor
 
     def rotate(self, rotation: Quaternion):
         rotationMatrix = rotation.toMatrix()
 
-        center = self.centerPoint()
-        centerVector = np.array([center.x, center.y, center.z], dtype = np.float32)
+        centre = self.centrePoint()
+        centreVector = np.array([centre.x, centre.y, centre.z], dtype = np.float32)
 
         for point in self.points:
             pointVector = np.array([point.x, point.y, point.z], dtype = np.float32)
 
-            offsetFromCenter = pointVector - centerVector
-            rotatedOffset = rotationMatrix @ offsetFromCenter
+            offsetFromcentre = pointVector - centreVector
+            rotatedOffset = rotationMatrix @ offsetFromcentre
 
-            rotatedPosition = centerVector + rotatedOffset
+            rotatedPosition = centreVector + rotatedOffset
 
             point.x = rotatedPosition[0]
             point.y = rotatedPosition[1]
@@ -162,8 +162,8 @@ class Triangle:
     def rotateFromOriginal(self, rotation: Quaternion):
         rotationMatrix = rotation.toMatrix()
 
-        originalCenter = self.originalCenterPoint()
-        originalCenterVector = np.array([originalCenter.x, originalCenter.y, originalCenter.z], dtype = np.float32)
+        originalcentre = self.originalcentrePoint()
+        originalcentreVector = np.array([originalcentre.x, originalcentre.y, originalcentre.z], dtype = np.float32)
 
         for pointIndex in range(len(self.points)):
             point = self.points[pointIndex]
@@ -171,9 +171,9 @@ class Triangle:
 
             originalPointVector = np.array([originalPoint.x, originalPoint.y, originalPoint.z], dtype = np.float32)
 
-            offsetFromCenter = originalPointVector - originalCenterVector
-            rotatedOffset = rotationMatrix @ offsetFromCenter
-            rotatedPosition = rotatedOffset + originalCenterVector
+            offsetFromcentre = originalPointVector - originalcentreVector
+            rotatedOffset = rotationMatrix @ offsetFromcentre
+            rotatedPosition = rotatedOffset + originalcentreVector
 
             point.x = float(rotatedPosition[0])
             point.y = float(rotatedPosition[1])
